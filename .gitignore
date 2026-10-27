@@ -1,0 +1,22 @@
+# secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# IDE and OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# generated: market data (re-create with `tiq backfill`) and experiment output (re-create with `tiq run`)
+data/
+reports/
