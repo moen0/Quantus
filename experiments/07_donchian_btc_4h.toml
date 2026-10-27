@@ -1,0 +1,56 @@
+# Experiment 07: the same published Donchian ensemble on Bitcoin, but checked every 4 hours.
+# Identical to experiment 01 except for the bar size, so the two compare directly: does reacting
+# six times a day instead of once add enough to pay for the extra trading?
+# Needs:  tiq backfill --symbols BTCUSDT --interval 1h       (4h bars are built from hourly data)
+# Run:    tiq run experiments/07_donchian_btc_4h.toml
+
+[experiment]
+name = "07_donchian_btc_4h"
+family = "crypto-trend"
+published = "2025-04-01"
+hypothesis = """
+Breakouts are detected sooner on 4-hour bars, so the published Donchian ensemble (lookbacks still \
+5 to 360 days, now evaluated six times a day) earns a higher risk-adjusted return than the daily \
+version after costs, and still beats holding BTC and volatility-targeted BTC.
+"""
+
+[data]
+interval = "4h"
+source_interval = "1h"
+start = "2018-09-01"
+
+[universe]
+symbols = ["BTCUSDT"]
+
+[strategy]
+name = "donchian_ensemble"
+
+[strategy.params]                  # lookbacks are in days, so they mean the same as in experiment 01
+lookbacks = [5, 10, 20, 30, 60, 90, 150, 250, 360]
+target_vol = 0.25
+vol_lookback_days = 90
+max_asset_leverage = 2.0
+
+[execution]
+delay = 1                          # decide at a 4h close, fill at the next 4h open
+rebalance_band = 0.02
+
+[costs]
+fee_bps = 10.0
+half_spread_bps = 5.0
+impact_coef = 1.0
+capital = 100000.0
+
+[validation]
+mode = "fixed"
+
+[kill_criteria]
+min_oos_sharpe = 0.5
+min_psr = 0.95
+min_dsr = 0.95
+max_pbo = 0.5
+max_spa_pvalue = 0.10
+max_null_pvalue = 0.10
+min_breakeven_cost_multiple = 2.0
+max_drawdown = 0.5
+must_beat = ["buy_and_hold", "vol_target_buy_and_hold"]

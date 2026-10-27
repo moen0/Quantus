@@ -1,0 +1,62 @@
+# Experiment 03: does choosing among Donchian variants on past data help, or is it noise?
+# Same idea as 01, but eight variants compete and walk-forward picks one every six months using
+# only the preceding two years. PBO and SPA measure whether the selection adds anything.
+# Run:  tiq run experiments/03_donchian_btc_walkforward.toml
+
+[experiment]
+name = "03_donchian_btc_walkforward"
+family = "crypto-trend"
+hypothesis = """
+Within the Donchian family, the best variant over the last two years tends to stay better over the next \
+six months, so walk-forward selection beats the fixed published ensemble (experiment 01) out-of-sample.
+"""
+
+[data]
+interval = "1d"
+start = "2018-09-01"               # first training window; out-of-sample starts two years later
+
+[universe]
+symbols = ["BTCUSDT"]
+
+[strategy]
+name = "donchian_ensemble"
+
+[strategy.params]
+target_vol = 0.25
+max_asset_leverage = 2.0
+
+[strategy.grid]                    # 4 x 2 = 8 variants, every one counts as a trial
+lookbacks = [
+    [5, 10, 20, 30, 60, 90, 150, 250, 360],   # the paper's full ensemble
+    [5, 10, 20, 30, 60, 90],                  # fast half
+    [30, 60, 90, 150, 250, 360],              # slow half
+    [20, 60, 150, 360],                       # sparse
+]
+vol_lookback_days = [30, 90]
+
+[execution]
+delay = 1
+rebalance_band = 0.02
+
+[costs]
+fee_bps = 10.0
+half_spread_bps = 5.0
+impact_coef = 1.0
+capital = 100000.0
+
+[validation]
+mode = "walk_forward"
+train_days = 730
+test_days = 182
+min_trades = 3
+
+[kill_criteria]
+min_oos_sharpe = 0.5
+min_psr = 0.95
+min_dsr = 0.95
+max_pbo = 0.5
+max_spa_pvalue = 0.10
+max_null_pvalue = 0.10
+min_breakeven_cost_multiple = 2.0
+max_drawdown = 0.5
+must_beat = ["buy_and_hold", "vol_target_buy_and_hold"]

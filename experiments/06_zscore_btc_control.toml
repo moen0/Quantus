@@ -1,0 +1,56 @@
+# Experiment 06 (negative control): the original project's z-score mean reversion, on daily BTC.
+# Expected to FAIL. If the bench passed this, the bench would be the problem.
+# Run:  tiq run experiments/06_zscore_btc_control.toml
+
+[experiment]
+name = "06_zscore_btc_control"
+family = "crypto-meanrev"
+hypothesis = """
+Buying Bitcoin after a fall of more than `entry` standard deviations below its rolling mean, and \
+selling once it recovers to within `exit` of the mean, earns more than holding BTC after costs.
+"""
+
+[data]
+interval = "1d"
+start = "2018-09-01"
+
+[universe]
+symbols = ["BTCUSDT"]
+
+[strategy]
+name = "zscore_reversion"
+
+[strategy.params]
+target_vol = 0.25
+
+[strategy.grid]                    # 3 x 3 x 2 = 18 variants
+window_days = [10, 20, 40]
+entry = [1.5, 2.0, 2.5]
+exit = [0.0, 0.5]
+
+[execution]
+delay = 1
+rebalance_band = 0.02
+
+[costs]
+fee_bps = 10.0
+half_spread_bps = 5.0
+impact_coef = 1.0
+capital = 100000.0
+
+[validation]
+mode = "walk_forward"
+train_days = 730
+test_days = 182
+min_trades = 3
+
+[kill_criteria]
+min_oos_sharpe = 0.5
+min_psr = 0.95
+min_dsr = 0.95
+max_pbo = 0.5
+max_spa_pvalue = 0.10
+max_null_pvalue = 0.10
+min_breakeven_cost_multiple = 2.0
+max_drawdown = 0.5
+must_beat = ["buy_and_hold", "vol_target_buy_and_hold"]

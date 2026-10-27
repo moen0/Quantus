@@ -1,0 +1,57 @@
+# Experiment 05: moving-average crossover on BTC and ETH, the classic chart rule.
+# A 3 x 3 grid of fast/slow averages competes in walk-forward. Included because it is what most
+# retail "trend bots" run; the bench shows how much of its reputation survives costs and the nulls.
+# Run:  tiq run experiments/05_ma_crossover_btc_eth.toml
+
+[experiment]
+name = "05_ma_crossover_btc_eth"
+family = "crypto-trend"
+hypothesis = """
+Holding BTC and ETH only while a fast moving average is above a slow one improves risk-adjusted \
+returns over holding them, after costs, out-of-sample.
+"""
+
+[data]
+interval = "1d"
+start = "2018-09-01"
+
+[universe]
+symbols = ["BTCUSDT", "ETHUSDT"]
+
+[strategy]
+name = "ma_crossover"
+
+[strategy.params]
+target_vol = 0.25
+vol_lookback_days = 90
+
+[strategy.grid]
+fast_days = [10, 20, 50]
+slow_days = [100, 150, 200]
+
+[execution]
+delay = 1
+rebalance_band = 0.02
+
+[costs]
+fee_bps = 10.0
+half_spread_bps = 5.0
+impact_coef = 1.0
+capital = 100000.0
+
+[validation]
+mode = "walk_forward"
+train_days = 730
+test_days = 182
+min_trades = 2
+
+[kill_criteria]
+min_oos_sharpe = 0.5
+min_psr = 0.95
+min_dsr = 0.95
+max_pbo = 0.5
+max_spa_pvalue = 0.10
+max_null_pvalue = 0.10
+min_breakeven_cost_multiple = 2.0
+max_drawdown = 0.5
+must_beat = ["buy_and_hold", "vol_target_buy_and_hold"]

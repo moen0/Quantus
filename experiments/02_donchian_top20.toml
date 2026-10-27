@@ -1,0 +1,62 @@
+# Experiment 02: the published Donchian ensemble on a rotating top-20 universe of liquid coins.
+# The universe is rebuilt every week from data available at the time, from all 676 USDT pairs ever
+# listed on Binance spot, delisted ones included, so it is free of survivorship bias.
+# Needs:  tiq backfill --all --quote USDT --interval 1d
+# Run:    tiq run experiments/02_donchian_top20.toml
+
+[experiment]
+name = "02_donchian_top20"
+family = "crypto-trend"
+published = "2025-04-01"
+hypothesis = """
+The trend premium is broader than Bitcoin: the same published Donchian ensemble applied to each of \
+the 20 most liquid coins (equal risk sleeves, 25% volatility target per sleeve) beats both an \
+equal-weight basket of those coins and a volatility-targeted version of that basket, after realistic \
+costs including market impact in thinner coins (Zarattini, Pagani & Barbon 2025 report Sharpe > 1.5).
+"""
+
+[data]
+interval = "1d"
+start = "2019-01-01"
+
+[universe]
+quote = "USDT"
+top_n = 20
+min_history_days = 365             # the paper requires a year of trading history
+liquidity_lookback_days = 30
+min_median_quote_volume = 2000000  # the paper: median daily volume of at least 2 million USD
+min_annual_vol = 0.10              # drop anything behaving like a stablecoin
+rebalance_days = 7
+
+[strategy]
+name = "donchian_ensemble"
+
+[strategy.params]
+lookbacks = [5, 10, 20, 30, 60, 90, 150, 250, 360]
+target_vol = 0.25
+vol_lookback_days = 90
+max_asset_leverage = 2.0           # at most 2 x 5% = 10% per coin; total exposure capped at 100%
+
+[execution]
+delay = 1
+rebalance_band = 0.005             # sleeves are 5% each, so a smaller band than for one asset
+
+[costs]
+fee_bps = 10.0
+half_spread_bps = 5.0
+impact_coef = 1.0
+capital = 100000.0
+
+[validation]
+mode = "fixed"
+
+[kill_criteria]
+min_oos_sharpe = 0.5
+min_psr = 0.95
+min_dsr = 0.95
+max_pbo = 0.5
+max_spa_pvalue = 0.10
+max_null_pvalue = 0.10
+min_breakeven_cost_multiple = 2.0
+max_drawdown = 0.5
+must_beat = ["buy_and_hold", "vol_target_buy_and_hold"]
